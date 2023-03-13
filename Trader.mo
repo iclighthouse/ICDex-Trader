@@ -16,13 +16,14 @@ import Nat8 "mo:base/Nat8";
 import Option "mo:base/Option";
 import Principal "mo:base/Principal";
 import Float "mo:base/Float";
+import Time "mo:base/Time";
 import Hex "lib/Hex";
 import Tools "lib/Tools";
 
 // Roles.
 // owner: setting operator, setting whitelist pairs, trading, withdrawal
 // operator: trading
-shared(installMsg) actor class Trader(_owner: ?Principal) = this {
+shared(installMsg) actor class Trader(_owner: ?Principal, lockedPeriodDays: ?Nat) = this {
     type PairInfo = {
         canisterId: Principal; 
         info: {
@@ -41,6 +42,7 @@ shared(installMsg) actor class Trader(_owner: ?Principal) = this {
 
     private let version_: Text = "0.1";
     //private stable var hasInitialized: Bool = false;
+    private stable var unlockTime: Int = Time.now() + Option.get(lockedPeriodDays, 0) * 24 * 3600 * 1_000_000_000;
     private stable var hasPaused: Bool = false; 
     private stable var owner: Principal = Option.get(_owner, installMsg.caller);
     private stable var operators: List.List<Principal> = List.nil();
@@ -301,6 +303,9 @@ shared(installMsg) actor class Trader(_owner: ?Principal) = this {
     public query func getOwner() : async Principal{  
         return owner;
     };
+    public query func getUnlockTime() : async Time.Time{  
+        return unlockTime;
+    };
     public shared(msg) func changeOwner(_newOwner: Principal) : async Bool{ 
         assert(_onlyOwner(msg.caller));
         owner := _newOwner;
@@ -340,6 +345,7 @@ shared(installMsg) actor class Trader(_owner: ?Principal) = this {
     /// withdraw
     public shared(msg) func withdraw(_token: Principal, _std: {#drc20; #icrc1}, _to: Principal, _value: Nat) : async (){ 
         assert(_onlyOwner(msg.caller));
+        assert(Time.now() >= unlockTime);
         let account = Tools.principalToAccountBlob(_to, null);
         let address = Tools.principalToAccountHex(_to, null);
         if (_std == #drc20){

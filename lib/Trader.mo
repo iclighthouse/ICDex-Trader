@@ -151,5 +151,5 @@ module {
     wallet_receive : shared () -> async ();
     withdraw : shared ( token: Principal, { #icrc1; #drc20 }, to: Principal, Nat ) -> async ();
   };
-  public type Trader = ?Principal -> async Self
+  public type Trader = (?Principal, ?Nat) -> async Self
 }
