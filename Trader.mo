@@ -40,7 +40,7 @@ shared(installMsg) actor class Trader(_owner: ?Principal, lockedPeriodDays: ?Nat
         token1Decimals: Nat8
     };
 
-    private let version_: Text = "0.1";
+    private let version_: Text = "0.3";
     //private stable var hasInitialized: Bool = false;
     private stable var unlockTime: Int = Time.now() + Option.get(lockedPeriodDays, 0) * 24 * 3600 * 1_000_000_000;
     private stable var hasPaused: Bool = false; 
@@ -343,34 +343,20 @@ shared(installMsg) actor class Trader(_owner: ?Principal, lockedPeriodDays: ?Nat
     };
 
     /// withdraw
-    public shared(msg) func withdraw(_token: Principal, _std: {#drc20; #icrc1}, _to: Principal, _value: Nat) : async (){ 
+    public shared(msg) func withdraw(_token: Principal, _to: ICRC1.Account, _value: Nat) : async (){ 
         assert(_onlyOwner(msg.caller));
         assert(Time.now() >= unlockTime);
-        let account = Tools.principalToAccountBlob(_to, null);
-        let address = Tools.principalToAccountHex(_to, null);
-        if (_std == #drc20){
-            let token: ICRC1.Self = actor(Principal.toText(_token));
-            let args : ICRC1.TransferArgs = {
-                memo = null;
-                amount = _value;
-                fee = null;
-                from_subaccount = null;
-                to = {owner = _to; subaccount = null};
-                created_at_time = null;
-            };
-            let res = await token.icrc1_transfer(args);
-        } else {
-            let token: ICRC1.Self = actor(Principal.toText(_token));
-            let args : ICRC1.TransferArgs = {
-                memo = null;
-                amount = _value;
-                fee = null;
-                from_subaccount = null;
-                to = {owner = _to; subaccount = null};
-                created_at_time = null;
-            };
-            let res = await token.icrc1_transfer(args);
+        //let account = Tools.principalToAccountBlob(_to, null);
+        let token: ICRC1.Self = actor(Principal.toText(_token));
+        let args : ICRC1.TransferArgs = {
+            memo = null;
+            amount = _value;
+            fee = null;
+            from_subaccount = null;
+            to = _to;
+            created_at_time = null;
         };
+        let res = await token.icrc1_transfer(args);
     };
 
     // DRC207: ICMonitor
