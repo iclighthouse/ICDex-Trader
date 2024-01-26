@@ -20,7 +20,7 @@ Query operators
 dfx canister --network ic call Trader getOperators
 ```
 
-## 3. Register dApp canister through SNS proposal.
+## 3. Register Trader as a dApp canister through SNS proposal.
 
 ## 4. SNS Treasury funds transferred to the Trader canister.
 
