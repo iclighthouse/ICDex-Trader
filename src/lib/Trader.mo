@@ -1,5 +1,7 @@
+import ICDex "mo:icl/ICDexTypes";
 module {
-  public type AccountId = [Nat8];
+  public type AccountId = Blob;
+  public type Account = { owner : Principal; subaccount : ?Blob };
   public type Address = Text;
   public type Amount = Nat;
   public type BalanceChange = {
@@ -129,14 +131,38 @@ module {
     memory_allocation : Nat;
     compute_allocation : Nat;
   };
+  public type PairInfo = {
+        canisterId: Principal; 
+        info: {
+            name: Text;
+            version: Text;
+            decimals: Nat8;
+            owner: Principal;
+            paused: Bool;
+            setting: ICDex.DexSetting;
+            token0: ICDex.TokenInfo;
+            token1: ICDex.TokenInfo;
+        }; 
+        token0Decimals: Nat8; 
+        token1Decimals: Nat8;
+        token0Fee: ?Nat; 
+        token1Fee: ?Nat;
+        isToken0SupportApproval: ?Bool;
+        isToken1SupportApproval: ?Bool;
+        isKeptInPair: ?Bool;
+    };
   public type Self = actor {
+    addLiquidity : shared (_maker: Principal, _value0: Nat, _value1: Nat) -> async Nat;
+    removeLiquidity : shared (_maker: Principal, _shares: ?Nat) -> async (value0: Nat, value1: Nat);
+    buyWall : shared (_pair: Principal, _buywall: [{price: Float; quantity: Nat}]) -> async [{price: Float; quantity: Nat; result: ?ICDex.TradingResult }];
     cancel : shared (pair: Principal, ?Txid) -> async ();
+    cancelAll : shared (_pair: Principal) -> async ();
     canister_status : shared () -> async canister_status;
-    changeOwner : shared Principal -> async Bool;
     events : shared (pair: Principal) -> async [TxnRecord];
-    fallback : shared (pair: Principal, ?Txid) -> async Bool;
+    fallbackFromPair : shared (_pair: Principal) -> async (value0: Nat, value1: Nat);
+    fallbackFromMaker : shared (_maker: Principal) -> async (value0: Nat, value1: Nat);
+    getBalances : shared () -> async [{pair: Principal; tokens: (Text, Text); traderBalances: (Nat, Nat); keptInPairBalances: ICDex.KeepingBalance }];
     getOperators : shared query () -> async [Principal];
-    getOwner : shared query () -> async Principal;
     getWhitelist : shared query () -> async [Principal];
     order : shared ( pair: Principal, { #Buy; #Sell }, price: Float, quantity: Nat) -> async TradingResult;
     orderbook : shared (pair: Principal) -> async (unitSize: Nat, orderBook: { ask : [(Float, Nat)]; bid : [(Float, Nat)] });
@@ -147,9 +173,14 @@ module {
     setOperator : shared Principal -> async Bool;
     setWhitelist : shared Principal -> async Bool;
     status : shared (pair: Principal, ?Txid) -> async OrderStatusResponse;
+    depositToPair : shared (_pair: Principal, _value0: ?Nat, _value1: ?Nat) -> async ();
+    withdrawFromPair : shared (_pair: Principal) -> async ();
+    withdraw : shared ( token: Principal, to: Account, value: Nat ) -> async ();
     version : shared query () -> async Text;
+    pause : shared (_pause: Bool) -> async ();
+    isPaused : shared query () -> async Bool;
+    init : shared () -> async ();
     wallet_receive : shared () -> async ();
-    withdraw : shared ( token: Principal, { #icrc1; #drc20 }, to: Principal, Nat ) -> async ();
   };
   public type Trader = (?Principal, ?Nat) -> async Self
 }
