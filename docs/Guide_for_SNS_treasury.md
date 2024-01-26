@@ -56,10 +56,7 @@ Withdraws funds from Pair canister to Maker canister
 dfx canister --network ic call Trader withdrawFromPair '(principal "__trading_pair_canister-id__")'
 ```
 
-## 6. Sends funds from Trader canister back to SNS Treasury
+## 6. Sends funds from Trader canister back to SNS Treasury through SNS proposal.
 ```
-dfx canister --network ic call Trader withdraw '(principal "__token0_canister-id__", record{ owner = principal "__SNS_canister-id__"; subaccount = __SNS_treasury_subaccount__ }, __amount-of-Token0__)'
-```
-```
-dfx canister --network ic call Trader withdraw '(principal "__token1_canister-id__", record{ owner = principal "__SNS_canister-id__"; subaccount = __SNS_treasury_subaccount__ }, __amount-of-Token1__)'
+withdraw : shared ( token: Principal, to: Account, value: Nat ) -> async ();
 ```
