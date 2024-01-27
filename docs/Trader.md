@@ -55,12 +55,12 @@ Solution: query through the drc205_events() method of the trading pair.
 func order(_pair : Principal, _side : {#Buy; #Sell}, _price : Float, _quantity : Nat) : async ICDex.TradingResult
 ```
 
-Place an order
+Place an order  
 Parameters:
 - pair       Canister-id of the pair.
 - side       Side of the order, its value is #Buy or #Sell.
 - price      Human-readable Price, e.g. SNS1/ICP = 45.00, expressed as how many `base_unit`s (e.g. ICPs) of token1 can be exchanged for 1 `base_unit`s (e.g. SNS1s) of token0.
-                Price = _price * 10**token1_decimals / 10**token0_decimals * UNIT_SIZE
+                Price = _price * 10\**token1_decimals / 10\**token0_decimals * UNIT_SIZE
 - quantity   Quantity (smallest unit) of token0 to be traded for the order. It MUST be an integer multiple of UNIT_SIZE.
 
 Example:  
