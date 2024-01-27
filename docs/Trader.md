@@ -57,13 +57,14 @@ func order(_pair : Principal, _side : {#Buy; #Sell}, _price : Float, _quantity :
 
 Place an order
 Parameters:
-    _pair       Canister-id of the pair.
-    _side       Side of the order, its value is #Buy or #Sell.
-    _price      Human-readable Price, e.g. SNS1/ICP = 45.00, expressed as how many `base_unit`s (e.g. ICPs) of token1 can be exchanged for 1 `base_unit`s (e.g. SNS1s) of token0.
+- pair       Canister-id of the pair.
+- side       Side of the order, its value is #Buy or #Sell.
+- price      Human-readable Price, e.g. SNS1/ICP = 45.00, expressed as how many `base_unit`s (e.g. ICPs) of token1 can be exchanged for 1 `base_unit`s (e.g. SNS1s) of token0.
                 Price = _price * 10**token1_decimals / 10**token0_decimals * UNIT_SIZE
-    _quantity   Quantity (smallest unit) of token0 to be traded for the order. It MUST be an integer multiple of UNIT_SIZE.
-Example: 
-    Purchase 2 SNS1s at 45.00 via SNS1/ICP pair.
+- quantity   Quantity (smallest unit) of token0 to be traded for the order. It MUST be an integer multiple of UNIT_SIZE.
+
+Example:  
+    Purchase 2 SNS1s at 45.00 via SNS1/ICP pair.  
     order(Principal.fromText("xxxxx-xxxxx-xxxxx-cai"), #Buy, 45.00, 200000000)
 
 ## Function `buyWall`

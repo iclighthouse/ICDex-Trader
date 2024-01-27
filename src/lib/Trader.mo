@@ -1,4 +1,5 @@
 import ICDex "mo:icl/ICDexTypes";
+import Maker "mo:icl/ICDexMaker";
 module {
   public type AccountId = Blob;
   public type Account = { owner : Principal; subaccount : ?Blob };
@@ -150,6 +151,7 @@ module {
         isToken0SupportApproval: ?Bool;
         isToken1SupportApproval: ?Bool;
         isKeptInPair: ?Bool;
+        OAMMPools: ?[Principal];
     };
   public type Self = actor {
     addLiquidity : shared (_maker: Principal, _value0: Nat, _value1: Nat) -> async Nat;
@@ -161,7 +163,13 @@ module {
     events : shared composite query (pair: Principal) -> async [TxnRecord];
     fallbackFromPair : shared (_pair: Principal) -> async (value0: Nat, value1: Nat);
     fallbackFromMaker : shared (_maker: Principal) -> async (value0: Nat, value1: Nat);
-    getBalances : shared () -> async [{pair: Principal; tokens: (Text, Text); traderBalances: (Nat, Nat); keptInPairBalances: ICDex.KeepingBalance }];
+    getBalances : shared () -> async [{
+        pair: Principal; 
+        tokens: (Text, Text); 
+        traderBalances: (Nat, Nat); 
+        keptInPairBalances: ICDex.KeepingBalance;
+        OAMMPools: [{maker: Principal; shares: Nat; shareDecimals: Nat8; NAV: Maker.UnitNetValue }]
+    }];
     getOperators : shared query () -> async [Principal];
     getWhitelist : shared query () -> async [Principal];
     order : shared ( pair: Principal, { #Buy; #Sell }, price: Float, quantity: Nat) -> async TradingResult;

@@ -59,8 +59,8 @@ dfx canister --network ic call TraderFactory create '("Trader-1", principal "xja
 **Trader Example**
 
 - Canister-id: cirzd-3aaaa-aaaak-afk2q-cai (Test)
-- Module hash: 8d1f786ad31779ff727bb81acce98d12285b08b9475eb9c170d9ef87f2cec072
-- Version: 0.5.0
+- Module hash: 81f433901e89f46ff9327b0a64c08ed0e4eb6fa583e936ac0c8609f844785514
+- Version: 0.5.2
 - Build: {
     "args": "--compacting-gc"
 }

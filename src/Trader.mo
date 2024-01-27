@@ -37,7 +37,7 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
     type AccountId = T.AccountId;
     type Timestamp = Nat; // seconds
 
-    private let version_: Text = "0.5.0";
+    private let version_: Text = "0.5.2";
     private let timeoutSeconds: Nat = 300;
     private stable var paused: Bool = false; 
     private stable var operators: List.List<Principal> = List.nil();
@@ -270,6 +270,28 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
         };
     };
 
+    private func _putOAMM(_pair: Principal, _maker: Principal): (){
+        switch(_getPairInfo(_pair)){
+            case(?(pair)){
+                var OAMMPools: [Principal] = Option.get(pair.OAMMPools, []);
+                pairInfo := List.filter(pairInfo, func (p: PairInfo): Bool{ p.canisterId != _pair });
+                pairInfo := List.push({
+                    canisterId = _pair;
+                    info = pair.info;
+                    token0Decimals = pair.token0Decimals;
+                    token1Decimals = pair.token1Decimals;
+                    token0Fee = pair.token0Fee; 
+                    token1Fee = pair.token1Fee;
+                    isToken0SupportApproval = pair.isToken0SupportApproval;
+                    isToken1SupportApproval = pair.isToken1SupportApproval;
+                    isKeptInPair = pair.isKeptInPair;
+                    OAMMPools = ?Tools.arrayAppend(Array.filter(OAMMPools, func (t: Principal): Bool{ t != _maker }), [_maker]);
+                }, pairInfo);
+            };
+            case(_){};
+        };
+    };
+
     private func _isInitialized(_pair: Principal) : Bool{
         return List.some(pairInfo, func (pair: PairInfo): Bool{ 
             pair.canisterId == _pair and Option.isSome(pair.isKeptInPair) 
@@ -320,6 +342,7 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
             isToken0SupportApproval = ?isToken0SupportApproval;
             isToken1SupportApproval = ?isToken1SupportApproval;
             isKeptInPair = ?true;
+            OAMMPools = null;
         }, pairInfo);
     };
 
@@ -403,13 +426,14 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
 
     /// Place an order
     /// Parameters:
-    ///     _pair       Canister-id of the pair.
-    ///     _side       Side of the order, its value is #Buy or #Sell.
-    ///     _price      Human-readable Price, e.g. SNS1/ICP = 45.00, expressed as how many `base_unit`s (e.g. ICPs) of token1 can be exchanged for 1 `base_unit`s (e.g. SNS1s) of token0.
+    /// - pair       Canister-id of the pair.
+    /// - side       Side of the order, its value is #Buy or #Sell.
+    /// - price      Human-readable Price, e.g. SNS1/ICP = 45.00, expressed as how many `base_unit`s (e.g. ICPs) of token1 can be exchanged for 1 `base_unit`s (e.g. SNS1s) of token0.
     ///                 Price = _price * 10**token1_decimals / 10**token0_decimals * UNIT_SIZE
-    ///     _quantity   Quantity (smallest unit) of token0 to be traded for the order. It MUST be an integer multiple of UNIT_SIZE.
-    /// Example: 
-    ///     Purchase 2 SNS1s at 45.00 via SNS1/ICP pair.
+    /// - quantity   Quantity (smallest unit) of token0 to be traded for the order. It MUST be an integer multiple of UNIT_SIZE.
+    /// 
+    /// Example:  
+    ///     Purchase 2 SNS1s at 45.00 via SNS1/ICP pair.  
     ///     order(Principal.fromText("xxxxx-xxxxx-xxxxx-cai"), #Buy, 45.00, 200000000)
     public shared(msg) func order(_pair: Principal, _side: {#Buy;#Sell}, _price: Float, _quantity: Nat) : async ICDex.TradingResult{
         assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
@@ -475,6 +499,7 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
                             await* _tokenTransfer(pair.info.token1.0, pair.info.token1.2, makerDepositIcrc1Account, Nat.sub(_value1, token1Fee));
                         };
                         result := await maker.add(Nat.sub(_value0, token0Fee*2), Nat.sub(_value1, token1Fee*2), null);
+                        _putOAMM(pairCanisterId, _maker);
                     };
                     case(_){};
                 };
@@ -510,6 +535,7 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
                     case(?pair){
                         let shares = Option.get(_shares, (await maker.getAccountShares(_accountIdToHex(traderAccountId))).0);
                         result := await maker.remove(shares, null);
+                        _putOAMM(pairCanisterId, _maker);
                     };
                     case(_){};
                 };
@@ -654,18 +680,40 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
 
     /// Return trader's balances.  
     /// Tip: It is more efficient to query directly using the query method of the ICDex trading pair and Tokens.
-    public shared(msg) func getBalances() : async [{pair: Principal; tokens: (Text, Text); traderBalances: (Nat, Nat); keptInPairBalances: ICDex.KeepingBalance }]{
+    public shared(msg) func getBalances() : async [{
+        pair: Principal; 
+        tokens: (Text, Text); 
+        traderBalances: (Nat, Nat); 
+        keptInPairBalances: ICDex.KeepingBalance;
+        OAMMPools: [{maker: Principal; shares: Nat; shareDecimals: Nat8; NAV: Maker.UnitNetValue }]
+    }]{
         assert(_onlyOwner(msg.caller));
         let traderIcrc1Account = {owner = Principal.fromActor(this); subaccount = null };
-        var balances : [{pair: Principal; tokens: (Text, Text); traderBalances: (Nat, Nat); keptInPairBalances: ICDex.KeepingBalance }] = [];
+        let traderAccountId = Tools.principalToAccountBlob(Principal.fromActor(this), null);
+        var balances : [{
+            pair: Principal; 
+            tokens: (Text, Text); 
+            traderBalances: (Nat, Nat); 
+            keptInPairBalances: ICDex.KeepingBalance;
+            OAMMPools: [{maker: Principal; shares: Nat; shareDecimals: Nat8; NAV: Maker.UnitNetValue }]
+        }] = [];
         for (pair in List.toIter(pairInfo)){
             let traderBalances = await* _getTokenBalances(pair.canisterId, traderIcrc1Account);
             let keptInPairBalances = await* _getPairBalances(pair.canisterId, traderIcrc1Account);
+            var OAMMPools : [{maker: Principal; shares: Nat; shareDecimals: Nat8; NAV: Maker.UnitNetValue }] = [];
+            for (makerCId in Option.get(pair.OAMMPools, []).vals()){
+                let maker: Maker.Self = actor(Principal.toText(makerCId));
+                let shares = (await maker.getAccountShares(_accountIdToHex(traderAccountId))).0;
+                let shareDecimals: Nat8 = (await maker.info()).shareDecimals;
+                let nav = (await maker.stats()).latestUnitNetValue;
+                OAMMPools := Tools.arrayAppend(OAMMPools, [{maker = makerCId; shares = shares; shareDecimals = shareDecimals; NAV = nav}]);
+            };
             balances := Tools.arrayAppend(balances, [{
                 pair = pair.canisterId;
                 tokens = (pair.info.token0.1, pair.info.token1.1);
                 traderBalances = traderBalances;
                 keptInPairBalances = keptInPairBalances;
+                OAMMPools = OAMMPools;
             }]);
         };
         return balances;
