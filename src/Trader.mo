@@ -37,7 +37,7 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
     type AccountId = T.AccountId;
     type Timestamp = Nat; // seconds
 
-    private let version_: Text = "0.5.2";
+    private let version_: Text = "0.5.3";
     private let timeoutSeconds: Nat = 300;
     private stable var paused: Bool = false; 
     private stable var operators: List.List<Principal> = List.nil();
@@ -687,7 +687,7 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
         keptInPairBalances: ICDex.KeepingBalance;
         OAMMPools: [{maker: Principal; shares: Nat; shareDecimals: Nat8; NAV: Maker.UnitNetValue }]
     }]{
-        assert(_onlyOwner(msg.caller));
+        assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
         let traderIcrc1Account = {owner = Principal.fromActor(this); subaccount = null };
         let traderAccountId = Tools.principalToAccountBlob(Principal.fromActor(this), null);
         var balances : [{
