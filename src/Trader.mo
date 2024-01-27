@@ -35,8 +35,10 @@ import T "lib/Trader";
 shared(installMsg) actor class Trader(initPair: Principal) = this {
     type PairInfo = T.PairInfo;
     type AccountId = T.AccountId;
+    type Timestamp = Nat; // seconds
 
-    private let version_: Text = "0.4.0";
+    private let version_: Text = "0.5.0";
+    private let timeoutSeconds: Nat = 300;
     private stable var paused: Bool = false; 
     private stable var operators: List.List<Principal> = List.nil();
     private stable var whitelistPairs: List.List<Principal> = ?(initPair, null);
@@ -55,6 +57,9 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
         return List.some(whitelistPairs, func (p: Principal): Bool{ p == _pair });
     };
 
+    private func _now() : Timestamp{
+        return Int.abs(Time.now() / 1_000_000_000);
+    };
     private func _natToFloat(_n: Nat) : Float{
         let i : Int = _n;
         return Float.fromInt(i);
@@ -324,20 +329,18 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
     */
 
     /// Query statistics of the pair.  
-    /// Tip: It is more efficient to query directly using the query method of the ICDex trading pair.
-    public shared(msg) func price(_pair: Principal): async {price:Float; change24h:Float; vol24h:ICDex.Vol; totalVol:ICDex.Vol}{
-        assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
+    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+    /// Solution: query through the stats() method of the trading pair.
+    public composite query func price(_pair: Principal): async {price:Float; change24h:Float; vol24h:ICDex.Vol; totalVol:ICDex.Vol}{
         let dex: ICDex.Self = actor(Principal.toText(_pair));
         return await dex.stats();
     };
 
     /// Query orderbook of the pair.  
     /// Tip: It is more efficient to query directly using the query method of the ICDex trading pair.
-    public shared(msg) func orderbook(_pair: Principal): async (unitSize: Nat, orderBook: {ask: [(price: Float, quantity: Nat)]; bid: [(price: Float, quantity: Nat)]}){
-        assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
-        if (not(_isInitialized(_pair))){
-            await _init(_pair);
-        };
+    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+    /// Solution: query through the level100() method of the trading pair.
+    public composite query func orderbook(_pair: Principal): async (unitSize: Nat, orderBook: {ask: [(price: Float, quantity: Nat)]; bid: [(price: Float, quantity: Nat)]}){
         let dex: ICDex.Self = actor(Principal.toText(_pair));
         let res = await dex.level100();
         var token0Decimals: Nat8 = 0;
@@ -359,6 +362,45 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
         });
     };
 
+    /// Query the status of an order.  
+    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+    /// Solution: query through the statusByTxid() method of the trading pair.
+    public composite query func status(_pair: Principal, _txid: ?ICDex.Txid): async ICDex.OrderStatusResponse{
+        let address = Tools.principalToAccountHex(Principal.fromActor(this), null);
+        let dex: ICDex.Self = actor(Principal.toText(_pair));
+        let prepares = await dex.getTxAccount(address);
+        let nonce = prepares.2;
+        switch(_txid){
+            case(?(txid)){ 
+                return await dex.statusByTxid(txid);
+            };
+            case(_){
+                if (nonce > 0){
+                    return await dex.status(address, Nat.sub(nonce, 1));
+                };
+            };
+        };
+        return #None;
+    };
+
+    /// Orders in pending status. Note, _page start from 1.  
+    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+    /// Solution: query through the pending() method of the trading pair.
+    public composite query func pending(_pair: Principal, _page: ?Nat, _size: ?Nat): async ICDex.TrieList<ICDex.Txid, ICDex.TradingOrder>{
+        let address = Tools.principalToAccountHex(Principal.fromActor(this), null);
+        let dex: ICDex.Self = actor(Principal.toText(_pair));
+        return await dex.pending(?address, _page, _size);
+    };
+
+    /// Latest 100 events.  
+    /// Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+    /// Solution: query through the drc205_events() method of the trading pair.
+    public composite query func events(_pair: Principal): async [DRC205.TxnRecord]{
+        let address = Tools.principalToAccountHex(Principal.fromActor(this), null);
+        let drc205: DRC205.Impl = actor(Principal.toText(_pair));
+        return await drc205.drc205_events(?address);
+    };
+
     /// Place an order
     /// Parameters:
     ///     _pair       Canister-id of the pair.
@@ -376,7 +418,8 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
         if (not(_isInitialized(_pair))){
             await _init(_pair);
         };
-        return await* _placeAnOrder(_pair, _side, _price, _quantity);
+        let res = await* _placeAnOrder(_pair, _side, _price, _quantity);
+        return res;
     };
 
     /// Create buy-wall
@@ -410,29 +453,42 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
         if (not(_isInitialized(pairCanisterId))){
             await _init(pairCanisterId);
         };
-        let traderAccountId = Tools.principalToAccountBlob(Principal.fromActor(this), null);
-        let makerDepositIcrc1Account = {owner = _maker; subaccount = ?traderAccountId };
-        switch(_getPairInfo(pairCanisterId)){
-            case(?pair){
-                let token0Fee = Option.get(pair.token0Fee, 0);
-                let token1Fee = Option.get(pair.token1Fee, 0);
-                if (_value0 <= token0Fee*2 or _value1 <= token1Fee*2){
-                    throw Error.reject("The amount entered is too low.");
+        if (_now() > Option.get(addLiquidity_runningTime, 0) + timeoutSeconds){
+            addLiquidity_runningTime := ?_now();
+            try{
+                var result: Nat = 0;
+                let traderAccountId = Tools.principalToAccountBlob(Principal.fromActor(this), null);
+                let makerDepositIcrc1Account = {owner = _maker; subaccount = ?traderAccountId };
+                switch(_getPairInfo(pairCanisterId)){
+                    case(?pair){
+                        let token0Fee = Option.get(pair.token0Fee, 0);
+                        let token1Fee = Option.get(pair.token1Fee, 0);
+                        if (_value0 <= token0Fee*2 or _value1 <= token1Fee*2){
+                            throw Error.reject("The amount entered is too low.");
+                        };
+                        let isToken0Approved = await* _tokenApprove(pair.info.token0.0, pair.info.token0.2, {owner = _maker; subaccount = null});
+                        if (not(isToken0Approved)){
+                            await* _tokenTransfer(pair.info.token0.0, pair.info.token0.2, makerDepositIcrc1Account, Nat.sub(_value0, token0Fee));
+                        };
+                        let isToken1Approved = await* _tokenApprove(pair.info.token1.0, pair.info.token1.2, {owner = _maker; subaccount = null});
+                        if (not(isToken1Approved)){
+                            await* _tokenTransfer(pair.info.token1.0, pair.info.token1.2, makerDepositIcrc1Account, Nat.sub(_value1, token1Fee));
+                        };
+                        result := await maker.add(Nat.sub(_value0, token0Fee*2), Nat.sub(_value1, token1Fee*2), null);
+                    };
+                    case(_){};
                 };
-                let isToken0Approved = await* _tokenApprove(pair.info.token0.0, pair.info.token0.2, {owner = _maker; subaccount = null});
-                if (not(isToken0Approved)){
-                    await* _tokenTransfer(pair.info.token0.0, pair.info.token0.2, makerDepositIcrc1Account, Nat.sub(_value0, token0Fee));
-                };
-                let isToken1Approved = await* _tokenApprove(pair.info.token1.0, pair.info.token1.2, {owner = _maker; subaccount = null});
-                if (not(isToken1Approved)){
-                    await* _tokenTransfer(pair.info.token1.0, pair.info.token1.2, makerDepositIcrc1Account, Nat.sub(_value1, token1Fee));
-                };
-                return await maker.add(Nat.sub(_value0, token0Fee*2), Nat.sub(_value1, token1Fee*2), null);
+                addLiquidity_runningTime := null;
+                return result;
+            }catch(e){
+                addLiquidity_runningTime := null;
+                throw Error.reject("Error: "# Error.message(e));
             };
-            case(_){};
+        }else{
+            throw Error.reject("Another operator is performing this operation. Try again later.");
         };
-        return 0;
     };
+    private var addLiquidity_runningTime: ?Timestamp = null;
 
     /// Remove liquidity from OAMM
     public shared(msg) func removeLiquidity(_maker: Principal, _shares: ?Nat) : async (value0: Nat, value1: Nat){
@@ -445,85 +501,37 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
         if (not(_isInitialized(pairCanisterId))){
             await _init(pairCanisterId);
         };
-        let traderAccountId = Tools.principalToAccountBlob(Principal.fromActor(this), null);
-        switch(_getPairInfo(pairCanisterId)){
-            case(?pair){
-                let shares = Option.get(_shares, (await maker.getAccountShares(_accountIdToHex(traderAccountId))).0);
-                return await maker.remove(shares, null);
-            };
-            case(_){};
-        };
-        return (0, 0);
-    };
-
-    /// Query the status of an order.  
-    /// Tip: It is more efficient to query directly using the query method of the ICDex trading pair.
-    public shared(msg) func status(_pair: Principal, _txid: ?ICDex.Txid): async ICDex.OrderStatusResponse{
-        assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
-        let address = Tools.principalToAccountHex(Principal.fromActor(this), null);
-        let dex: ICDex.Self = actor(Principal.toText(_pair));
-        let prepares = await dex.getTxAccount(address);
-        let nonce = prepares.2;
-        switch(_txid){
-            case(?(txid)){ 
-                return await dex.statusByTxid(txid);
-            };
-            case(_){
-                if (nonce > 0){
-                    return await dex.status(address, Nat.sub(nonce, 1));
+        if (_now() > Option.get(removeLiquidity_runningTime, 0) + timeoutSeconds){
+            removeLiquidity_runningTime := ?_now();
+            try{
+                var result: (Nat, Nat) = (0, 0);
+                let traderAccountId = Tools.principalToAccountBlob(Principal.fromActor(this), null);
+                switch(_getPairInfo(pairCanisterId)){
+                    case(?pair){
+                        let shares = Option.get(_shares, (await maker.getAccountShares(_accountIdToHex(traderAccountId))).0);
+                        result := await maker.remove(shares, null);
+                    };
+                    case(_){};
                 };
+                removeLiquidity_runningTime := null;
+                return result;
+            }catch(e){
+                removeLiquidity_runningTime := null;
+                throw Error.reject("Error: "# Error.message(e));
             };
+        }else{
+            throw Error.reject("Another operator is performing this operation. Try again later.");
         };
-        return #None;
     };
-
-    /// Orders in pending status. Note, _page start from 1.  
-    /// Tip: It is more efficient to query directly using the query method of the ICDex trading pair.
-    public shared(msg) func pending(_pair: Principal, _page: ?Nat, _size: ?Nat): async ICDex.TrieList<ICDex.Txid, ICDex.TradingOrder>{
-        assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
-        let address = Tools.principalToAccountHex(Principal.fromActor(this), null);
-        let dex: ICDex.Self = actor(Principal.toText(_pair));
-        return await dex.pending(?address, _page, _size);
-    };
-
-    /// Latest 100 events.  
-    /// Tip: It is more efficient to query directly using the query method of the ICDex trading pair.
-    public shared(msg) func events(_pair: Principal): async [DRC205.TxnRecord]{
-        assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
-        let address = Tools.principalToAccountHex(Principal.fromActor(this), null);
-        let drc205: DRC205.Impl = actor(Principal.toText(_pair));
-        return await drc205.drc205_events(?address);
-    };
+    private var removeLiquidity_runningTime: ?Timestamp = null;
 
     /// cancel order
-    public shared(msg) func cancel(_pair: Principal, _txid: ?ICDex.Txid) : async (){
+    public shared(msg) func cancel(_pair: Principal, _txid: ICDex.Txid) : async (){
         assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
         assert(_onlyWhitelistPair(_pair));
         assert(not(paused));
-        let address = Tools.principalToAccountHex(Principal.fromActor(this), null);
         let dex: ICDex.Self = actor(Principal.toText(_pair));
-        let prepares = await dex.getTxAccount(address);
-        let nonce = prepares.2;
-        switch(_txid){
-            case(?(txid)){
-                await dex.cancelByTxid(txid, null);
-            };
-            case(_){
-                if (nonce > 0){
-                    await dex.cancel(Nat.sub(nonce, 1), null);
-                };
-            };
-        };
-    };
-
-    /// cancel all orders
-    public shared(msg) func cancelAll(_pair: Principal) : async (){
-        assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
-        assert(_onlyWhitelistPair(_pair));
-        assert(not(paused));
-        let address = Tools.principalToAccountHex(Principal.fromActor(this), null);
-        let dex: ICDex.Self = actor(Principal.toText(_pair));
-        await dex.cancelAll(#self_sa(null), null);
+        await dex.cancelByTxid(_txid, null);
     };
 
     /// fallback blocked funds from Pair
@@ -549,8 +557,20 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
         if (not(_isInitialized(_pair))){
             await _init(_pair);
         };
-        await* _depositToPair(_pair, _value0, _value1);
+        if (_now() > Option.get(depositToPair_runningTime, 0) + timeoutSeconds){
+            depositToPair_runningTime := ?_now();
+            try{
+                await* _depositToPair(_pair, _value0, _value1);
+                depositToPair_runningTime := null;
+            }catch(e){
+                depositToPair_runningTime := null;
+                throw Error.reject("Error: "# Error.message(e));
+            };
+        }else{
+            throw Error.reject("Another operator is performing this operation. Try again later.");
+        };
     };
+    private var depositToPair_runningTime: ?Timestamp = null;
 
     /// Withdraw funds from Pair to Trader.  
     /// Note: This only withdraws the available funds, if you want to withdraw all the funds, execute the `cancelAll()` method first.
@@ -559,8 +579,20 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
         if (not(_isInitialized(_pair))){
             await _init(_pair);
         };
-        await* _withdrawFromPair(_pair);
+        if (_now() > Option.get(withdrawFromPair_runningTime, 0) + timeoutSeconds){
+            withdrawFromPair_runningTime := ?_now();
+            try{
+                await* _withdrawFromPair(_pair);
+                withdrawFromPair_runningTime := null;
+            }catch(e){
+                withdrawFromPair_runningTime := null;
+                throw Error.reject("Error: "# Error.message(e));
+            };
+        }else{
+            throw Error.reject("Another operator is performing this operation. Try again later.");
+        };
     };
+    private var withdrawFromPair_runningTime: ?Timestamp = null;
 
     /* 
     * Management
@@ -581,8 +613,8 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
     /// The initialization can be repeated.
     public shared(msg) func init() : async (){
         assert(_onlyOwner(msg.caller));
-        for (pair in List.toIter(pairInfo)){
-            await _init(pair.canisterId);
+        for (pair in List.toIter(whitelistPairs)){
+            await _init(pair);
         };
     };
     /// Add a whitelist trading pair (only these pairs are allowed to be traded)
@@ -637,6 +669,16 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
             }]);
         };
         return balances;
+    };
+
+    /// cancel all orders
+    public shared(msg) func cancelAll(_pair: Principal) : async (){
+        assert(_onlyOwner(msg.caller));
+        assert(_onlyWhitelistPair(_pair));
+        assert(not(paused));
+        let address = Tools.principalToAccountHex(Principal.fromActor(this), null);
+        let dex: ICDex.Self = actor(Principal.toText(_pair));
+        await dex.cancelAll(#self_sa(null), null);
     };
 
     /// Withdraw

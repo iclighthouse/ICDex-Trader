@@ -4,6 +4,11 @@
       "main": "src/Trader.mo",
       "type": "motoko",
       "args" : "--compacting-gc"
+    },
+    "TraderFactory": {
+      "main": "src/TraderFactory.mo",
+      "type": "motoko",
+      "args" : "--compacting-gc"
     }
   },
   "defaults": {
