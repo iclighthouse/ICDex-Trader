@@ -613,8 +613,8 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
     /// The initialization can be repeated.
     public shared(msg) func init() : async (){
         assert(_onlyOwner(msg.caller));
-        for (pair in List.toIter(pairInfo)){
-            await _init(pair.canisterId);
+        for (pair in List.toIter(whitelistPairs)){
+            await _init(pair);
         };
     };
     /// Add a whitelist trading pair (only these pairs are allowed to be traded)
