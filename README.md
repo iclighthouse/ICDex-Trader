@@ -37,7 +37,7 @@ The `controller` of Trader Canister is the creator, and the Cycles balance of th
 - [/docs/Trader.md](./docs/Trader.md)
 - [/docs/TraderFactory.md](./docs/TraderFactory.md)
 
-### Create a Trader canister
+### Create a Trader canister (Example)
 ```
 dfx canister --network ic call TraderFactory create '("Trader-1", principal "xjazg-fiaaa-aaaar-qacrq-cai", null, null)'
 ```
