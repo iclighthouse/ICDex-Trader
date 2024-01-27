@@ -39,6 +39,8 @@ The `controller` of Trader Canister is the creator, and the Cycles balance of th
 
 ### Create a Trader canister (Example)
 ```
+dfx canister --network ic call __ICL_canister_id__ icrc2_approve '(record{ spender = record{owner = principal "ibnyg-oiaaa-aaaar-qaa3q-cai"; subaccount = null }; amount = 10_000_000_000: nat })'
+
 dfx canister --network ic call TraderFactory create '("Trader-1", principal "xjazg-fiaaa-aaaar-qacrq-cai", null, null)'
 ```
 
