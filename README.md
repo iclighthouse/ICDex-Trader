@@ -19,30 +19,27 @@ Adds a non-withdrawal operator to the Trader, which acts as the account in the q
 
 ## Guide
 
-1. Deploy Trader Canister
+1. Create a Trader canister
 2. Configure whitelisted trading pairs
 3. Configure operators
 4. Send token0 and token1 to Trader Canister
 5. Enjoy trading
 6. Withdraw token0 and token1
 
-## Core interface
+## Note:
 
-Doc: [/docs/Trader.md](./docs/Trader.md)
+The `controller` of Trader Canister is the creator, and the Cycles balance of the canister needs to be monitored and topped up by the creator.
 
-### Place an order
-```
-order: (principal, variant { Buy; Sell; }, float64, nat) -> (TradingResult);
-```
-Parameters:
-- pair: Principal       Canister-id of the pair.
-- side: {#Buy; #Sell}   Side of the order, its value is #Buy or #Sell.
-- price: Float          Human-readable Price, e.g. SNS1/ICP = 45.00, expressed as how many `base_unit`s (e.g. ICPs) of token1 can be exchanged for 1 `base_unit`s (e.g. SNS1s) of token0. `Price in integer representation = _price * 10**token1_decimals / 10**token0_decimals * UNIT_SIZE`
-- quantity: Nat         Quantity (smallest unit) of token0 to be traded for the order. It MUST be an integer multiple of `UNIT_SIZE`.
+**WARNING**: If the Cycles balance of Trader Canister is insufficient, it may result in the deletion of the canister, which will result in the loss of all assets in the canister. The creator needs to monitor the Cycles balance of the canister at all times!
 
-Example: Purchase 2 Token at 45.00 via Token/ICP pair.
+## Docs
+
+- [/docs/Trader.md](./docs/Trader.md)
+- [/docs/TraderFactory.md](./docs/TraderFactory.md)
+
+### Create a Trader canister
 ```
-dfx canister --network ic call Trader '(principal "__trading_pair_canister-id__", variant{ Buy }, 45.00: float64, 200_000_000: nat)'
+dfx canister --network ic call TraderFactory create '("Trader-1", principal "xjazg-fiaaa-aaaar-qacrq-cai", null, null)'
 ```
 
 ## Canisters
@@ -53,11 +50,15 @@ dfx canister --network ic call Trader '(principal "__trading_pair_canister-id__"
     - moc: 0.10.3 
 - vessel: 0.7.0 (https://github.com/dfinity/vessel/releases/tag/v0.7.0)
 
-**Testnet**
+**Trader Factory**
 
-- Canister-id: cirzd-3aaaa-aaaak-afk2q-cai
-- Module hash: c67842683c20a1ceaa89e448fc30aace5d2fdf3b0b9ac8f136eab0ea72fe399d
-- Version: 0.4.0
+- Canister-id: ibnyg-oiaaa-aaaar-qaa3q-cai (Mainnet)
+
+**Trader Example**
+
+- Canister-id: cirzd-3aaaa-aaaak-afk2q-cai (Test)
+- Module hash: a139d40b03a3bf2e13d4560fdad79997e0ff31fab843a46c3824f207f6184fe1
+- Version: 0.5.0
 - Build: {
     "args": "--compacting-gc"
 }

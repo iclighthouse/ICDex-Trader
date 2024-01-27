@@ -10,7 +10,8 @@ func price(_pair : Principal) : async { price : Float; change24h : Float; vol24h
 ```
 
 Query statistics of the pair.  
-Tip: It is more efficient to query directly using the query method of the ICDex trading pair.
+Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+Solution: query through the stats() method of the trading pair.
 
 ## Function `orderbook`
 ``` motoko no-repl
@@ -19,6 +20,35 @@ func orderbook(_pair : Principal) : async (unitSize : Nat, orderBook : { ask : [
 
 Query orderbook of the pair.  
 Tip: It is more efficient to query directly using the query method of the ICDex trading pair.
+Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+Solution: query through the level100() method of the trading pair.
+
+## Function `status`
+``` motoko no-repl
+func status(_pair : Principal, _txid : ?ICDex.Txid) : async ICDex.OrderStatusResponse
+```
+
+Query the status of an order.  
+Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+Solution: query through the statusByTxid() method of the trading pair.
+
+## Function `pending`
+``` motoko no-repl
+func pending(_pair : Principal, _page : ?Nat, _size : ?Nat) : async ICDex.TrieList<ICDex.Txid, ICDex.TradingOrder>
+```
+
+Orders in pending status. Note, _page start from 1.  
+Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+Solution: query through the pending() method of the trading pair.
+
+## Function `events`
+``` motoko no-repl
+func events(_pair : Principal) : async [DRC205.TxnRecord]
+```
+
+Latest 100 events.  
+Tip: This is a composite_query method that does not get results if the trading pair and Trader are not in the same subnet.   
+Solution: query through the drc205_events() method of the trading pair.
 
 ## Function `order`
 ``` motoko no-repl
@@ -57,43 +87,12 @@ func removeLiquidity(_maker : Principal, _shares : ?Nat) : async (value0 : Nat, 
 
 Remove liquidity from OAMM
 
-## Function `status`
-``` motoko no-repl
-func status(_pair : Principal, _txid : ?ICDex.Txid) : async ICDex.OrderStatusResponse
-```
-
-Query the status of an order.  
-Tip: It is more efficient to query directly using the query method of the ICDex trading pair.
-
-## Function `pending`
-``` motoko no-repl
-func pending(_pair : Principal, _page : ?Nat, _size : ?Nat) : async ICDex.TrieList<ICDex.Txid, ICDex.TradingOrder>
-```
-
-Orders in pending status. Note, _page start from 1.  
-Tip: It is more efficient to query directly using the query method of the ICDex trading pair.
-
-## Function `events`
-``` motoko no-repl
-func events(_pair : Principal) : async [DRC205.TxnRecord]
-```
-
-Latest 100 events.  
-Tip: It is more efficient to query directly using the query method of the ICDex trading pair.
-
 ## Function `cancel`
 ``` motoko no-repl
-func cancel(_pair : Principal, _txid : ?ICDex.Txid) : async ()
+func cancel(_pair : Principal, _txid : ICDex.Txid) : async ()
 ```
 
 cancel order
-
-## Function `cancelAll`
-``` motoko no-repl
-func cancelAll(_pair : Principal) : async ()
-```
-
-cancel all orders
 
 ## Function `fallbackFromPair`
 ``` motoko no-repl
@@ -201,6 +200,13 @@ func getBalances() : async [{ pair : Principal; tokens : (Text, Text); traderBal
 
 Return trader's balances.  
 Tip: It is more efficient to query directly using the query method of the ICDex trading pair and Tokens.
+
+## Function `cancelAll`
+``` motoko no-repl
+func cancelAll(_pair : Principal) : async ()
+```
+
+cancel all orders
 
 ## Function `withdraw`
 ``` motoko no-repl
