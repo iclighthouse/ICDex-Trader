@@ -59,7 +59,7 @@ Cancel all orders
 dfx canister --network ic call Trader cancelAll '(principal "__trading_pair_canister-id__")'
 ```
 
-Withdraws funds from Pair canister to Maker canister
+Withdraws funds from Pair canister to Trader canister
 ```
 dfx canister --network ic call Trader withdrawFromPair '(principal "__trading_pair_canister-id__")'
 ```
