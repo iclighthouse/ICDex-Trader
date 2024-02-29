@@ -185,10 +185,12 @@ module {
     withdrawFromPair : shared (_pair: Principal) -> async ();
     withdraw : shared ( token: Principal, to: Account, value: Nat ) -> async ();
     version : shared query () -> async Text;
+    getOwner : shared query () -> async Principal;
+    changeOwner : shared (_owner: Principal) -> async ();
     pause : shared (_pause: Bool) -> async ();
     isPaused : shared query () -> async Bool;
     init : shared () -> async ();
     wallet_receive : shared () -> async ();
   };
-  public type Trader = (?Principal, ?Nat) -> async Self
+  public type Trader = (initPair: Principal, initOwner: ?Principal) -> async Self
 }

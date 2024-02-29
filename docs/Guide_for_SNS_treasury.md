@@ -1,4 +1,4 @@
-# An guide for SNS treasury to add liquidity to ICDex
+# A guide for SNS treasury to add liquidity to ICDex
 
 ## ICDex-Trader: A decentralized trader for SNS Treasury
 
@@ -9,12 +9,12 @@ SNS Treasury funds participate in ICDex trading or provide liquidity in a non-cu
 ```
 dfx canister --network ic create Trader --controller __your principal__
 dfx build --network ic Trader
-dfx canister --network ic install Trader --argument '(principal "__trading_pair_canister-id__")'
+dfx canister --network ic install Trader --argument '(principal "__trading_pair_canister-id__", opt principal "__DAO_governance_canister-id__")'
 ```
 Or (Your account needs to have a sufficient ICL balance, default TRADER_CREATION_FEE is 5 ICL): 
 ```
 dfx canister --network ic call __ICL_canister_id__ icrc2_approve '(record{ spender = record{owner = principal "ibnyg-oiaaa-aaaar-qaa3q-cai"; subaccount = null }; amount = 10_000_000_000: nat })'
-dfx canister --network ic call ibnyg-oiaaa-aaaar-qaa3q-cai create '("Trader-1", principal "__trading_pair_canister-id__", null, null)'
+dfx canister --network ic call ibnyg-oiaaa-aaaar-qaa3q-cai create '("Trader-1", principal "__trading_pair_canister-id__", opt principal "__DAO_governance_canister-id__", null)'
 ```
 
 ## 2. (Optional) Adding an operator
