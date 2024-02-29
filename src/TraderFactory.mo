@@ -196,7 +196,10 @@ shared(installMsg) actor class TraderFactory() = this {
     /// WARNING: If the Cycles balance of Trader Canister is insufficient, it may result in the deletion of the canister, which will result in the loss of all assets in the canister. The creator needs to monitor the Cycles balance of the canister at all times!
     public shared(msg) func create(_name: Text, _initPair: Principal, _traderOwner: ?Principal, _sa: ?[Nat8]) : async ?Principal {
         let accountId = Tools.principalToAccountBlob(msg.caller, _sa);
-        let traderOwner = Tools.principalToAccountBlob(Option.get(_traderOwner, msg.caller), null);
+        var traderOwner = accountId;
+        if (Option.isSome(_traderOwner)){
+            traderOwner := Tools.principalToAccountBlob(Option.get(_traderOwner, msg.caller), null);
+        };
         try{
             await* _transferFrom(SYSTOKEN, {owner = msg.caller; subaccount = _toSaBlob(_sa)}, TRADER_CREATION_FEE);
             try{
