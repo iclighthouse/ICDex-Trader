@@ -28,7 +28,7 @@ Returns configurations
 
 ## Function `create`
 ``` motoko no-repl
-func create(_name : Text, _initPair : Principal, _traderOwner : ?AccountId, _sa : ?[Nat8]) : async ?Principal
+func create(_name : Text, _initPair : Principal, _traderOwner : ?Principal, _sa : ?[Nat8]) : async ?Principal
 ```
 
 Create a trader.  

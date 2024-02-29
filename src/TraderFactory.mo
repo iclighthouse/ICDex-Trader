@@ -194,14 +194,14 @@ shared(installMsg) actor class TraderFactory() = this {
     /// Creating a Trader Canister requires payment of `TRADER_CREATION_FEE` ICLs, which are used to add an initial 0.5 T Cycles to the canister.  
     /// Note: The `controller` of Trader Canister is the creator, and the Cycles balance of the canister needs to be monitored and topped up by the creator.  
     /// WARNING: If the Cycles balance of Trader Canister is insufficient, it may result in the deletion of the canister, which will result in the loss of all assets in the canister. The creator needs to monitor the Cycles balance of the canister at all times!
-    public shared(msg) func create(_name: Text, _initPair: Principal, _traderOwner: ?AccountId, _sa: ?[Nat8]) : async ?Principal {
+    public shared(msg) func create(_name: Text, _initPair: Principal, _traderOwner: ?Principal, _sa: ?[Nat8]) : async ?Principal {
         let accountId = Tools.principalToAccountBlob(msg.caller, _sa);
-        let traderOwner = Option.get(_traderOwner, accountId);
+        let traderOwner = Tools.principalToAccountBlob(Option.get(_traderOwner, msg.caller), null);
         try{
             await* _transferFrom(SYSTOKEN, {owner = msg.caller; subaccount = _toSaBlob(_sa)}, TRADER_CREATION_FEE);
             try{
                 Cycles.add(500_000_000_000);
-                let trader = await TraderClass.Trader(_initPair);
+                let trader = await TraderClass.Trader(_initPair, _traderOwner);
                 let traderCanisterId = Principal.fromActor(trader);
                 let res = await ic.update_settings({
                     canister_id = traderCanisterId; 

@@ -63,8 +63,8 @@ Test (\__trading_pair_canister-id\__): xjazg-fiaaa-aaaar-qacrq-cai
 **Trader Example**
 
 - Canister-id: cirzd-3aaaa-aaaak-afk2q-cai (Test)
-- Module hash: 892310e1635f944cbabec4576fce1a8492aecce087901781531ead1047f973dd
-- Version: 0.5.3
+- Module hash: 48f27845fa769fde6d3a82fe25824c85d658cff0388e2211c917cccc01aa9fcc
+- Version: 0.5.4
 - Build: {
     "args": "--compacting-gc"
 }

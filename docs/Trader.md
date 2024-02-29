@@ -130,6 +130,20 @@ func version() : async Text
 ```
 
 
+## Function `getOwner`
+``` motoko no-repl
+func getOwner() : async Principal
+```
+
+Returns owner
+
+## Function `changeOwner`
+``` motoko no-repl
+func changeOwner(_owner : Principal) : async ()
+```
+
+Change owner
+
 ## Function `pause`
 ``` motoko no-repl
 func pause(_pause : Bool) : async ()
@@ -196,7 +210,7 @@ Return operators
 
 ## Function `getBalances`
 ``` motoko no-repl
-func getBalances() : async [{ pair : Principal; tokens : (Text, Text); traderBalances : (Nat, Nat); keptInPairBalances : ICDex.KeepingBalance }]
+func getBalances() : async [{ pair : Principal; tokens : (Text, Text); traderBalances : (Nat, Nat); keptInPairBalances : ICDex.KeepingBalance; OAMMPools : [{ maker : Principal; shares : Nat; shareDecimals : Nat8; NAV : Maker.UnitNetValue }] }]
 ```
 
 Return trader's balances.  

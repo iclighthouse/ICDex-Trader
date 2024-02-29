@@ -32,14 +32,15 @@ import T "lib/Trader";
 // owner: setting operator, setting whitelist pairs, trading, withdrawal
 // operator: trading
 
-shared(installMsg) actor class Trader(initPair: Principal) = this {
+shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal) = this {
     type PairInfo = T.PairInfo;
     type AccountId = T.AccountId;
     type Timestamp = Nat; // seconds
 
-    private let version_: Text = "0.5.3";
+    private let version_: Text = "0.5.4";
     private let timeoutSeconds: Nat = 300;
     private stable var paused: Bool = false; 
+    private stable var owner: Principal = Option.get(initOwner, installMsg.caller);
     private stable var operators: List.List<Principal> = List.nil();
     private stable var whitelistPairs: List.List<Principal> = ?(initPair, null);
     private stable var pairInfo: List.List<PairInfo> = List.nil();
@@ -48,7 +49,7 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
     * Local Functions
     */
     private func _onlyOwner(_caller: Principal) : Bool { 
-        return Principal.isController(_caller);
+        return Principal.isController(_caller) or _caller == owner;
     };  // assert(_onlyOwner(msg.caller));
     private func _onlyOperator(_caller: Principal) : Bool { 
         return List.some(operators, func (a: Principal): Bool{ a == _caller });
@@ -625,6 +626,15 @@ shared(installMsg) actor class Trader(initPair: Principal) = this {
     */
     public query func version() : async Text{  
         return version_;
+    };
+    /// Returns owner
+    public query func getOwner() : async Principal{
+        return owner;
+    };
+    /// Change owner
+    public shared(msg) func changeOwner(_owner: Principal) : async (){
+        assert(_onlyOwner(msg.caller));
+        owner := _owner;
     };
     /// Pause or enable this Canister.
     public shared(msg) func pause(_pause: Bool) : async (){ 
