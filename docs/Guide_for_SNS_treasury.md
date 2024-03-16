@@ -42,30 +42,27 @@ If no operators are set up, the SNS proposal can call them directly.
 
 (The unit of `amount` is the smallest_unit of token)
 
-Sends funds to Pair canister
+- Sends funds to Pair canister
 ```
 dfx canister --network ic call __trader_canister_id__ depositToPair '(principal "__trading_pair_canister-id__", null, null)'
 ```
-Adds liquidity
+- Adds liquidity
 ```
 dfx canister --network ic call __trader_canister_id__ addLiquidity '(principal "__maker_pool_canister-id__", __amount-of-Token0__ : nat, __amount-of-Token1__ : nat)'
 ```
-Creates a buy wall
+- Creates a buy wall
 ```
 dfx canister --network ic call __trader_canister_id__ buyWall '(principal "__trading_pair_canister-id__", vec{ __Example: record{price = 2.1 : float; quantity = 1000_000_000 : nat}; record{price = 3.5 : float; quantity = 500_000_000 : nat}__ })'
 ```
-
-Removes liquidity
+- Removes liquidity
 ```
 dfx canister --network ic call __trader_canister_id__ removeLiquidity '(principal "__trading_pair_canister-id__", null)'
 ```
-
-Cancel all orders
+- Cancel all orders
 ```
 dfx canister --network ic call __trader_canister_id__ cancelAll '(principal "__trading_pair_canister-id__")'
 ```
-
-Withdraws funds from Pair canister to Trader canister
+- Withdraws funds from Pair canister to Trader canister
 ```
 dfx canister --network ic call __trader_canister_id__ withdrawFromPair '(principal "__trading_pair_canister-id__")'
 ```
