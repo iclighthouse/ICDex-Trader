@@ -77,5 +77,5 @@ withdraw : shared ( token: Principal, to: Account, value: Nat ) -> async ();
 ```
 Notes:
 - The treasury account of ICP is `{ owner = principal "__SNS_Governance_canister_id__"; subaccount = null }`.
-- The treasury account of SNS ledger is `{ owner = principal "__SNS_Governance_canister_id__"; subaccount = opt blob "__Token_treasury__" }`, The `__Token_treasury__` requires you to get it from an earlier SNS mint records. 
+- The treasury account of SNS ledger is `{ owner = principal "__SNS_Governance_canister_id__"; subaccount = opt blob "__Token_treasury__" }`, The `__Token_treasury__` should be gotten from earlier SNS mint records. 
 - Only ICP and SNS ledger tokens (1-ICP; 2-SNSLedger) can be sent to the SNS Treasury, other tokens sent to the Treasury may not be withdrawn and lost.
