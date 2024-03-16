@@ -40,17 +40,22 @@ dfx canister --network ic call Trader getOperators
 
 If no operators are set up, the SNS proposal can call them directly.
 
-(The unit of `amount` is the smallest_unit of token)
+- `__trader_canister_id__` is SNS token trading pair on ICDex.
+- The unit of `amount` is the smallest_unit of token.
 
 - Sends funds to Pair canister
 ```
 dfx canister --network ic call __trader_canister_id__ depositToPair '(principal "__trading_pair_canister-id__", null, null)'
 ```
-- Adds liquidity
+- Adds liquidity  
+Notes: First create a public OAMM pool via https://iclight.io/icdex/pools and make it vip-maker, then you can get public OAMM pool canister-id.
 ```
-dfx canister --network ic call __trader_canister_id__ addLiquidity '(principal "__maker_pool_canister-id__", __amount-of-Token0__ : nat, __amount-of-Token1__ : nat)'
+dfx canister --network ic call __trader_canister_id__ addLiquidity '(principal "__public_OAMM_pool_canister-id__", __amount-of-Token0__ : nat, __amount-of-Token1__ : nat)'
 ```
-- Creates a buy wall
+- Creates a buy wall  
+Notes: 
+    `price` : float, is the human-readable price, i.e. the price displayed on the UI of the trading pair; 
+    `quantity` : nat, is the AMOUNT (its unit is the smallest_unit) of the SNS token for the order.
 ```
 dfx canister --network ic call __trader_canister_id__ buyWall '(principal "__trading_pair_canister-id__", vec{ __Example: record{price = 2.1 : float; quantity = 1000_000_000 : nat}; record{price = 3.5 : float; quantity = 500_000_000 : nat}__ })'
 ```
