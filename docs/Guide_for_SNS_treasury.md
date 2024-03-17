@@ -4,7 +4,7 @@
 
 SNS Treasury funds participate in ICDex trading or provide liquidity in a non-custodial manner, maintaining decentralization. Agent moral hazard can be effectively mitigated by transferring SNS Treasury funds to Trader Canister and assigning a non-drawing operator to manage them. 
 
-## 1. Deploy Trader Canister
+## 1. Deploy a trader canister
 
 ```
 dfx canister --network ic create Trader --controller __your principal__
@@ -40,8 +40,13 @@ dfx canister --network ic call Trader getOperators
 
 If no operators are set up, the SNS proposal can call them directly.
 
-- `__trader_canister_id__` is SNS token trading pair on ICDex.
+Notes:
+
+- `__trading_pair_canister-id__` is SNS token trading pair on ICDex.
+- `__trader_canister_id__` is trader canister-id you deployed.
 - The unit of `amount` is the smallest_unit of token.
+
+Operations:
 
 - Sends funds to Pair canister (If funds are sent from the SNS Treasury, they do not need to be sent manually).
 ```
