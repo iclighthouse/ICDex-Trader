@@ -43,7 +43,7 @@ If no operators are set up, the SNS proposal can call them directly.
 - `__trader_canister_id__` is SNS token trading pair on ICDex.
 - The unit of `amount` is the smallest_unit of token.
 
-- Sends funds to Pair canister
+- Sends funds to Pair canister (If funds are sent from the SNS Treasury, they do not need to be sent manually).
 ```
 dfx canister --network ic call __trader_canister_id__ depositToPair '(principal "__trading_pair_canister-id__", null, null)'
 ```
