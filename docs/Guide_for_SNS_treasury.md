@@ -25,7 +25,7 @@ dfx canister --network ic call __trader_canister_id__ setOperator '(principal "_
 ```
 Query operators
 ```
-dfx canister --network ic call Trader getOperators
+dfx canister --network ic call __trader_canister_id__ getOperators
 ```
 
 ## 3. Register Trader as a dApp canister through SNS proposal.
