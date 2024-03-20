@@ -10,6 +10,11 @@
       "type": "motoko",
       "args" : "--compacting-gc"
     },
+    "ConversionTrader": {
+      "main": "src/Trader.mo",
+      "type": "motoko",
+      "args" : "--compacting-gc"
+    },
     "TraderFactory": {
       "main": "src/TraderFactory.mo",
       "type": "motoko",
