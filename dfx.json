@@ -5,7 +5,7 @@
       "type": "motoko",
       "args" : "--compacting-gc"
     },
-    "ICLTrader": {
+    "LiquidityTrader": {
       "main": "src/Trader.mo",
       "type": "motoko",
       "args" : "--compacting-gc"

@@ -80,6 +80,9 @@ dfx canister --network ic call __trader_canister_id__ withdrawFromPair '(princip
 ```
 
 ## 6. Sends funds from Trader canister back to SNS Treasury through SNS proposal.
+
+Make an #AddGenericNervousSystemFunction proposal to add Trader's withdraw() method. (Just add it once).
+
 Make an #ExecuteGenericNervousSystemFunction proposal to execute Trader's withdraw() method.
 ```
 withdraw : shared ( token: Principal, to: Account, value: Nat ) -> async ();
