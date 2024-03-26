@@ -30,7 +30,10 @@ dfx canister --network ic call __trader_canister_id__ getOperators
 
 ## 3. Register Trader as a dApp canister through SNS proposal.
 
-- Set SNS Root canister-id to Trader's controller.
+- Add SNS Root canister-id as one of Trader's controllers.
+```
+dfx canister --network ic call aaaaa-aa update_settings '(record{ canister_id = principal "__trader_canister_id__"; settings = record{ controllers = opt vec{principal "__original_owner__"; principal "__SNS_Root_canister-id__"} } })'
+```
 - Make a #RegisterDappCanisters proposal to add Trader to the SNS DAO.
 
 ## 4. SNS Treasury funds transferred to the Trader canister.
