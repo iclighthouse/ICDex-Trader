@@ -26,6 +26,8 @@ Adds a non-withdrawal operator to the Trader, which acts as the account in the q
 5. Enjoy trading
 6. Withdraw token0 and token1
 
+Note: An additional 2x token fee must be retained in the balance of Trader, and the entire amount cannot be used for placing orders.
+
 ## Note:
 
 The `controller` of Trader Canister is the creator, and the Cycles balance of the canister needs to be monitored and topped up by the creator.
