@@ -44,7 +44,7 @@ The `controller` of Trader Canister is the creator, and the Cycles balance of th
 TRADER_CREATION_FEE: 5 ICL
 
 ```
-dfx canister --network ic call __ICL_canister_id__ icrc2_approve '(record{ spender = record{owner = principal "ibnyg-oiaaa-aaaar-qaa3q-cai"; subaccount = null }; amount = 10_000_000_000: nat })'
+dfx canister --network ic call hhaaz-2aaaa-aaaaq-aacla-cai icrc2_approve '(record{ spender = record{owner = principal "ibnyg-oiaaa-aaaar-qaa3q-cai"; subaccount = null }; amount = 10_000_000_000: nat })'
 
 dfx canister --network ic call ibnyg-oiaaa-aaaar-qaa3q-cai create '("Trader-1", principal "__trading_pair_canister-id__", null, null)'
 ```

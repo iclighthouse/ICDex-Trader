@@ -13,7 +13,7 @@ dfx canister --network ic install Trader --argument '(principal "__trading_pair_
 ```
 Or (Your account needs to have a sufficient ICL balance, default TRADER_CREATION_FEE is 5 ICL): 
 ```
-dfx canister --network ic call __ICL_canister_id__ icrc2_approve '(record{ spender = record{owner = principal "ibnyg-oiaaa-aaaar-qaa3q-cai"; subaccount = null }; amount = 10_000_000_000: nat })'
+dfx canister --network ic call hhaaz-2aaaa-aaaaq-aacla-cai icrc2_approve '(record{ spender = record{owner = principal "ibnyg-oiaaa-aaaar-qaa3q-cai"; subaccount = null }; amount = 10_000_000_000: nat })'
 dfx canister --network ic call ibnyg-oiaaa-aaaar-qaa3q-cai create '("Trader-1", principal "__trading_pair_canister-id__", opt principal "__DAO_governance_canister-id__", null)'
 ```
 Notes:
@@ -64,10 +64,19 @@ dfx canister --network ic call __trader_canister_id__ addLiquidity '(principal "
 ```
 - Creates a buy wall  
 Notes: 
-    `price` : float, is the human-readable price, i.e. the price displayed on the UI of the trading pair; 
+    `price` : float, is the human-readable price, i.e. the price displayed on the UI of the trading pair;  
     `quantity` : nat, is the AMOUNT (its unit is the smallest_unit) of the SNS token for the order.
 ```
 dfx canister --network ic call __trader_canister_id__ buyWall '(principal "__trading_pair_canister-id__", vec{ __Example: record{price = 2.1 : float; quantity = 1000_000_000 : nat}; record{price = 3.5 : float; quantity = 500_000_000 : nat}__ })'
+```
+- Creates a #LMT order  
+Notes: 
+    `pair` : principal, Canister-id of the pair.  
+    `side` : variant, Side of the order, its value is #Buy or #Sell.  
+    `price` : float, is the human-readable price, i.e. the price displayed on the UI of the trading pair;  
+    `quantity` : nat, is the AMOUNT (its unit is the smallest_unit) of the SNS token for the order. It MUST be an integer multiple of UNIT_SIZE. Note: An additional 2x token fee must be retained in the balance. 
+```
+dfx canister --network ic call __trader_canister_id__ order '(principal "__trading_pair_canister-id__", variant{ __Buy/Sell__ }, 2.1 : float, 1000_000_000 : nat)'
 ```
 - Removes liquidity
 ```
