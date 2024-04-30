@@ -50,18 +50,28 @@ Notes:
 - `__trading_pair_canister-id__` is SNS token trading pair on ICDex.
 - `__trader_canister_id__` is trader canister-id you deployed.
 - The unit of `amount` is the smallest_unit of token.
+- An additional 2x token fee must be retained in the balance of Trader, and the entire amount cannot be used for placing orders.
+- When the operator calls `order()` or `buyWall()`, he is using funds that have been kept in the Pair canister by the Trader canister, so `depositToPair()` has to be called first, followed by `order()` or `buyWall()`. If you want to get the funds back into the Trader canister, you need to execute `withdrawFromPair()`.
+- When the operator calls `addLiquidity()`, the funds in Trader canister are used. If there are insufficient funds in the Trader canister, it is necessary to execute `withdrawFromPair()` and withdraw the funds kept in the Pair canister to the Trader canister.
 
 Operations:
 
-- Sends funds to Pair canister (If funds are sent from the SNS Treasury, they do not need to be sent manually).
-```
-dfx canister --network ic call __trader_canister_id__ depositToPair '(principal "__trading_pair_canister-id__", null, null)'
-```
 - Adds liquidity  
 Notes: First create a public OAMM pool via https://iclight.io/icdex/pools and make it vip-maker, then you can get public OAMM pool canister-id.
 ```
 dfx canister --network ic call __trader_canister_id__ addLiquidity '(principal "__public_OAMM_pool_canister-id__", __amount-of-Token0__ : nat, __amount-of-Token1__ : nat)'
 ```
+
+- Removes liquidity
+```
+dfx canister --network ic call __trader_canister_id__ removeLiquidity '(principal "__trading_pair_canister-id__", null)'
+```
+
+- Sends funds to Pair canister (If you are about to call `order()` or `buyWall()`).
+```
+dfx canister --network ic call __trader_canister_id__ depositToPair '(principal "__trading_pair_canister-id__", __token0_amount__, __token1_amount__)'
+```
+
 - Creates a buy wall  
 Notes: 
     `price` : float, is the human-readable price, i.e. the price displayed on the UI of the trading pair;  
@@ -69,6 +79,7 @@ Notes:
 ```
 dfx canister --network ic call __trader_canister_id__ buyWall '(principal "__trading_pair_canister-id__", vec{ __Example: record{price = 2.1 : float; quantity = 1000_000_000 : nat}; record{price = 3.5 : float; quantity = 500_000_000 : nat}__ })'
 ```
+
 - Creates a #LMT order  
 Notes: 
     `pair` : principal, Canister-id of the pair.  
@@ -78,14 +89,12 @@ Notes:
 ```
 dfx canister --network ic call __trader_canister_id__ order '(principal "__trading_pair_canister-id__", variant{ __Buy/Sell__ }, 2.1 : float, 1000_000_000 : nat)'
 ```
-- Removes liquidity
-```
-dfx canister --network ic call __trader_canister_id__ removeLiquidity '(principal "__trading_pair_canister-id__", null)'
-```
+
 - Cancel all orders
 ```
 dfx canister --network ic call __trader_canister_id__ cancelAll '(principal "__trading_pair_canister-id__")'
 ```
+
 - Withdraws funds from Pair canister to Trader canister
 ```
 dfx canister --network ic call __trader_canister_id__ withdrawFromPair '(principal "__trading_pair_canister-id__")'

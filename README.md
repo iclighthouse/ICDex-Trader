@@ -26,7 +26,12 @@ Adds a non-withdrawal operator to the Trader, which acts as the account in the q
 5. Enjoy trading
 6. Withdraw token0 and token1
 
-Note: An additional 2x token fee must be retained in the balance of Trader, and the entire amount cannot be used for placing orders.
+Note: 
+- An additional 2x token fee must be retained in the balance of Trader, and the entire amount cannot be used for placing orders.
+- When the operator calls `order()` or `buyWall()`, he is using funds that have been kept in the Pair canister by the Trader canister, so `depositToPair()` has to be called first, followed by `order()` or `buyWall()`. If you want to get the funds back into the Trader canister, you need to execute `withdrawFromPair()`.
+- When the operator calls `addLiquidity()`, the funds in Trader canister are used. If there are insufficient funds in the Trader canister, it is necessary to execute `withdrawFromPair()` and withdraw the funds kept in the Pair canister to the Trader canister.
+
+Translated with DeepL.com (free version)
 
 ## Note:
 
