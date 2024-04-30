@@ -57,7 +57,9 @@ Notes:
 Operations:
 
 - Adds liquidity  
-Notes: First create a public OAMM pool via https://iclight.io/icdex/pools and make it vip-maker, then you can get public OAMM pool canister-id.
+Notes: 
+- First create a public OAMM pool via https://iclight.io/icdex/pools and make it vip-maker, then you can get public OAMM pool canister-id.
+- The OAMM pool must be initialised before this operation can be performed successfully. The initialisation is done by the creator of the OAMM pool adding the first liquidity.
 ```
 dfx canister --network ic call __trader_canister_id__ addLiquidity '(principal "__public_OAMM_pool_canister-id__", __amount-of-Token0__ : nat, __amount-of-Token1__ : nat)'
 ```
