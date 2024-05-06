@@ -51,8 +51,8 @@ Notes:
 - `__trader_canister_id__` is trader canister-id you deployed.
 - The unit of `amount` is the smallest_unit of token.
 - An additional 2x token fee must be retained in the balance of Trader, and the entire amount cannot be used for placing orders.
-- When the operator calls `order()` or `buyWall()`, he is using funds that have been kept in the Pair canister by the Trader canister, so `depositToPair()` has to be called first, followed by `order()` or `buyWall()`. If you want to get the funds back into the Trader canister, you need to execute `withdrawFromPair()`.
-- When the operator calls `addLiquidity()`, the funds in Trader canister are used. If there are insufficient funds in the Trader canister, it is necessary to execute `withdrawFromPair()` and withdraw the funds kept in the Pair canister to the Trader canister.
+- When the operator calls `order()` or `buyWall()`, he is using funds that have been kept in the Pair canister by the Trader canister, so `depositToPair()` has to be called first, followed by `order()` or `buyWall()`. If you want to get the funds back into the Trader canister, you need to execute `withdrawFundsFromPair()`.
+- When the operator calls `addLiquidity()`, the funds in Trader canister are used. If there are insufficient funds in the Trader canister, it is necessary to execute `withdrawFundsFromPair()` and withdraw the funds kept in the Pair canister to the Trader canister.
 
 Operations:
 
@@ -98,6 +98,10 @@ dfx canister --network ic call __trader_canister_id__ cancelAll '(principal "__t
 ```
 
 - Withdraws funds from Pair canister to Trader canister
+```
+dfx canister --network ic call __trader_canister_id__ withdrawFundsFromPair '(principal "__trading_pair_canister-id__", opt __token0_amount__ : opt nat, opt __token1_amount__ : opt nat)'
+```
+or (Trader v0.5.4)
 ```
 dfx canister --network ic call __trader_canister_id__ withdrawFromPair '(principal "__trading_pair_canister-id__")'
 ```

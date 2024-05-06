@@ -38,7 +38,7 @@ shared(installMsg) actor class TraderFactory() = this {
     };
 
     private stable var BLACKHOLE: Text = "7hdtw-jqaaa-aaaak-aaccq-cai";
-    private stable var SYSTOKEN: Principal = Principal.fromText("5573k-xaaaa-aaaak-aacnq-cai");
+    private stable var SYSTOKEN: Principal = Principal.fromText("hhaaz-2aaaa-aaaaq-aacla-cai");
     private stable var SYSTOKEN_FEE: Nat = 1_000_000; // 0.01 ICL
     private stable var TRADER_CREATION_FEE: Nat = 500_000_000; // 5 ICL
     private stable var ic: IC.Self = actor("aaaaa-aa");
@@ -133,7 +133,7 @@ shared(installMsg) actor class TraderFactory() = this {
         switch(result){
             case(#Ok(blockNumber)){};
             case(#Err(e)){
-                throw Error.reject("Error: Error when paying the fee for creating a trading pair."); 
+                throw Error.reject("Transfer Error. ("# debug_show(e) #")"); 
             };
         };
     };
@@ -151,7 +151,7 @@ shared(installMsg) actor class TraderFactory() = this {
         switch(result){
             case(#Ok(blockNumber)){};
             case(#Err(e)){
-                throw Error.reject("Error: Error when paying the fee for creating a trading pair."); 
+                throw Error.reject("Error: Error when paying the fee for creating a trading pair. ("# debug_show(e) #")"); 
             };
         };
     };

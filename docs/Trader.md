@@ -122,6 +122,15 @@ func withdrawFromPair(_pair : Principal) : async ()
 ```
 
 Withdraw funds from Pair to Trader.  
+This method will be deprecated and withdrawFundsFromPair() can be used.  
+Note: This only withdraws the available funds, if you want to withdraw all the funds, execute the `cancelAll()` method first.
+
+## Function `withdrawFundsFromPair`
+``` motoko no-repl
+func withdrawFundsFromPair(_pair : Principal, _value0 : ?Nat, _value1 : ?Nat) : async ()
+```
+
+Withdraw specified amount funds from Pair to Trader.  
 Note: This only withdraws the available funds, if you want to withdraw all the funds, execute the `cancelAll()` method first.
 
 ## Function `version`

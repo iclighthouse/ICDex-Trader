@@ -37,7 +37,7 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
     type AccountId = T.AccountId;
     type Timestamp = Nat; // seconds
 
-    private let version_: Text = "0.5.4";
+    private let version_: Text = "0.5.5";
     private let timeoutSeconds: Nat = 300;
     private stable var paused: Bool = false; 
     private stable var owner: Principal = Option.get(initOwner, installMsg.caller);
@@ -246,9 +246,9 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         };
     };
     // This only withdraws the available funds, if you want to withdraw all the funds, execute the .cancelAll() method first.
-    private func _withdrawFromPair(_pair: Principal) : async* (){
+    private func _withdrawFromPair(_pair: Principal, _value0: ?Nat, _value1: ?Nat) : async* (){
         let dex: ICDex.Self = actor(Principal.toText(_pair));
-        ignore await dex.withdraw(null, null, null);
+        ignore await dex.withdraw(_value0, _value1, null);
     };
 
     private func _placeAnOrder(_pair: Principal, _side: {#Buy;#Sell}, _price: Float, _quantity: Nat) : async* ICDex.TradingResult{
@@ -600,6 +600,7 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
     private var depositToPair_runningTime: ?Timestamp = null;
 
     /// Withdraw funds from Pair to Trader.  
+    /// This method will be deprecated and withdrawFundsFromPair() can be used.  
     /// Note: This only withdraws the available funds, if you want to withdraw all the funds, execute the `cancelAll()` method first.
     public shared(msg) func withdrawFromPair(_pair: Principal) : async (){ 
         assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
@@ -609,7 +610,27 @@ shared(installMsg) actor class Trader(initPair: Principal, initOwner: ?Principal
         if (_now() > Option.get(withdrawFromPair_runningTime, 0) + timeoutSeconds){
             withdrawFromPair_runningTime := ?_now();
             try{
-                await* _withdrawFromPair(_pair);
+                await* _withdrawFromPair(_pair, null, null);
+                withdrawFromPair_runningTime := null;
+            }catch(e){
+                withdrawFromPair_runningTime := null;
+                throw Error.reject("Error: "# Error.message(e));
+            };
+        }else{
+            throw Error.reject("Another operator is performing this operation. Try again later.");
+        };
+    };
+    /// Withdraw specified amount funds from Pair to Trader.  
+    /// Note: This only withdraws the available funds, if you want to withdraw all the funds, execute the `cancelAll()` method first.
+    public shared(msg) func withdrawFundsFromPair(_pair: Principal, _value0: ?Nat, _value1: ?Nat) : async (){ 
+        assert(_onlyOwner(msg.caller) or _onlyOperator(msg.caller));
+        if (not(_isInitialized(_pair))){
+            await _init(_pair);
+        };
+        if (_now() > Option.get(withdrawFromPair_runningTime, 0) + timeoutSeconds){
+            withdrawFromPair_runningTime := ?_now();
+            try{
+                await* _withdrawFromPair(_pair, _value0, _value1);
                 withdrawFromPair_runningTime := null;
             }catch(e){
                 withdrawFromPair_runningTime := null;

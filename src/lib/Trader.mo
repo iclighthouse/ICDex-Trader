@@ -183,6 +183,7 @@ module {
     status : shared composite query (pair: Principal, ?Txid) -> async OrderStatusResponse;
     depositToPair : shared (_pair: Principal, _value0: ?Nat, _value1: ?Nat) -> async ();
     withdrawFromPair : shared (_pair: Principal) -> async ();
+    withdrawFundsFromPair : shared (_pair: Principal, _value0: ?Nat, _value1: ?Nat) -> async ();
     withdraw : shared ( token: Principal, to: Account, value: Nat ) -> async ();
     version : shared query () -> async Text;
     getOwner : shared query () -> async Principal;
