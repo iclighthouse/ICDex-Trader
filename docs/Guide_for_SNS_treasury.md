@@ -19,7 +19,7 @@ dfx canister --network ic call ibnyg-oiaaa-aaaar-qaa3q-cai create '("Trader-1", 
 Notes:
 - Remember to monitor Trader cansiter's cycles balance and top it up in a timely manner.
 
-## 2. (Optional) Adding an operator
+## 2. (Optional) Add an operator
 ```
 dfx canister --network ic call __trader_canister_id__ setOperator '(principal "__operator_principal__")'
 ```
@@ -47,6 +47,7 @@ If no operators are set up, the SNS proposal can call them directly.
 
 Notes:
 
+- The `__xxxx__` on the command means you're replacing it with a specific value.
 - `__trading_pair_canister-id__` is SNS token trading pair on ICDex.
 - `__trader_canister_id__` is trader canister-id you deployed.
 - The unit of `amount` is the smallest_unit of token.
@@ -56,9 +57,9 @@ Notes:
 
 Operations:
 
-- Adds liquidity  
+- Adds liquidity    
 Notes: 
-- First create a public OAMM pool via https://iclight.io/icdex/pools and make it vip-maker, then you can get public OAMM pool canister-id.
+- First, create a public OAMM pool via https://iclight.io/icdex/pools and make it vip-maker, then you can get public OAMM pool canister-id.
 - The OAMM pool must be initialised before this operation can be performed successfully. The initialisation is done by the creator of the OAMM pool adding the first liquidity.
 ```
 dfx canister --network ic call __trader_canister_id__ addLiquidity '(principal "__public_OAMM_pool_canister-id__", __amount-of-Token0__ : nat, __amount-of-Token1__ : nat)'
@@ -87,7 +88,7 @@ Notes:
     `pair` : principal, Canister-id of the pair.  
     `side` : variant, Side of the order, its value is #Buy or #Sell.  
     `price` : float, is the human-readable price, i.e. the price displayed on the UI of the trading pair;  
-    `quantity` : nat, is the AMOUNT (its unit is the smallest_unit) of the SNS token for the order. It MUST be an integer multiple of UNIT_SIZE. Note: An additional 2x token fee must be retained in the balance. 
+    `quantity` : nat, is the AMOUNT (its unit is the smallest_unit) of the SNS token for the order. It MUST be an integer multiple of UNIT_SIZE. (Note: An additional 2x token fee must be retained in the balance.) 
 ```
 dfx canister --network ic call __trader_canister_id__ order '(principal "__trading_pair_canister-id__", variant{ __Buy/Sell__ }, 2.1 : float, 1000_000_000 : nat)'
 ```
