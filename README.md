@@ -31,8 +31,6 @@ Note:
 - When the operator calls `order()` or `buyWall()`, he is using funds that have been kept in the Pair canister by the Trader canister, so `depositToPair()` has to be called first, followed by `order()` or `buyWall()`. If you want to get the funds back into the Trader canister, you need to execute `withdrawFromPair()`.
 - When the operator calls `addLiquidity()`, the funds in Trader canister are used. If there are insufficient funds in the Trader canister, it is necessary to execute `withdrawFromPair()` and withdraw the funds kept in the Pair canister to the Trader canister.
 
-Translated with DeepL.com (free version)
-
 ## Note:
 
 The `controller` of Trader Canister is the creator, and the Cycles balance of the canister needs to be monitored and topped up by the creator.
